@@ -1,6 +1,30 @@
 # MemeDB design documentation
 
-## 1. Database Schema
+## Architecture
+
+[Client (Browser)] <--> [Axum Static Serve]
+       |
+       v
+[Axum API Server] <--> [SQLite Database]
+       |
+       v
+[Local File Storage (CAS)]
+
+## Core logic
+
+### Upload
+1. Frontend uploads file through api call
+2. Backend uses `SHA-256` to generate a hash `filename`
+3. Backend searches database for identical `filename`
+    - if `filename` does not exist, save file to disk, insert DB, return JSON
+    - if `filename` exists, do not save and return existing image data
+
+### Search
+1. Frontend calls api with tags
+2. Backend searches the database to find all images that match
+3. Backend returns a list of images if it finds them
+
+## Database Schema
 - `Images`
   - `id` - `INTEGER` - key
   - `filename` - `TEXT` - Use hash to distinguish each image
@@ -34,8 +58,9 @@
   );
   ```
 
-## 2. API Interface
-- `POST /api/upload`
+## API Interface
+- ### Upload an image
+  - `POST /api/upload`
   - **Request**: `multipart/form-data`
     - `file`: binary
   - **Response**:
@@ -45,54 +70,45 @@
       "status": 200,
       "data": {
         "id": 1,
-        "url": "http://localhost:1234/images/filename.jpg"
+        "filename": "abc123",
+        "ext": "jpg"
       }
     }
-  ```
-- `POST /api/images/1/tags`
+    ```
+- ### Tag an image
+  - `POST /api/images/{image_id}/tags`
   - **Request**: `application/json`
-  ```
-  JSON
-  {
-    "tags": ["cat", "meme"]
-  }
-  ```
-  - **Response**
-  ```
-  JSON
-  {
-    "status"： 200,
-    "msg": "Tags added",
-    "data": {
-      "image_id": 1,
-      "tags": ["cat", "meme"]
+    ```
+    JSON
+    {
+      "tags": ["cat", ... ]
     }
-  }
-  ```
-- `GET /api/search?tags=cat,happy`
-  ```
-  JSON
-  {
-    "status": 200,
-    "data": [
-      {
-        "id": 1,
-        "url": "http://localhost:1234/images/filename.jpg",
-      },
-      ...
-    ]
-  }
-  ```
-## 3. Core logic
-
-### Upload
-1. Frontend uploads file through api call
-2. Backend uses `SHA-256` to generate a filename
-3. Backend searches database for identical filename
-    - if filename not exists -> save file to disk, insert DB, return JSON
-    - if exists, do not save and return existing image data
-
-### Search
-1. Frontend calls api with tags
-2. Backend searches the database to find all images that match
-3. Backend returns a list of images if it finds them
+    ```
+  - **Response**
+    ```
+    JSON
+    {
+      "status"： 200,
+      "msg": "Tags added",
+      "data": {
+        "image_id": 1,
+        "tags": ["cat", "meme"]
+      }
+    }
+    ```
+- ### List tags of an image
+  - `GET /api/search?tags=cat,happy`
+  - **Response**
+    ```
+    JSON
+    {
+      "status": 200,
+      "data": [
+        {
+          "id": 1,
+          "url": "http://localhost:1234/images/filename.jpg",
+        },
+        ...
+      ]
+    }
+    ```

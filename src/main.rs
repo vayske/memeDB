@@ -36,17 +36,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Configure Router
     let app = Router::new()
-        .route("/", get(|| async { "MemeDB is running!" }))
         .route("/api/upload", post(upload_image))
         .route("/api/search", get(search_images))
         .route("/api/images/{id}/tags", post(add_tags).get(get_image_tags))
         .route("/api/tags", get(list_tags))
         .route("/api/images/{id}", delete(delete_image))
         .nest_service("/images", ServeDir::new("storage"))
+        .fallback_service(ServeDir::new("ui/dist"))
         .with_state(pool);
 
     // Launch Service
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    let addr = SocketAddr::from(([0, 0, 0, 0], 8081));
     println!("Server listening on http://{}", addr);
 
     let listener = tokio::net::TcpListener::bind(addr).await?;

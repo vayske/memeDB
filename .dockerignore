@@ -1,0 +1,13 @@
+target
+storage
+**/*.rs.bk
+db.sqlite
+.env
+.git
+.gitignore
+data
+setup.sh
+
+# Frontend
+ui/node_modules/
+ui/dist/

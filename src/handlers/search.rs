@@ -42,7 +42,7 @@ fn format_response(images: Vec<Image>) -> Json<serde_json::Value> {
         .map(|img| {
             json!({
                 "id": img.id,
-                "url": format!("http://localhost:3000/images/{}.{}", img.filename, img.ext),
+                "url": format!("/images/{}.{}", img.filename, img.ext),
                 "filename": img.filename,
                 "ext": img.ext
             })

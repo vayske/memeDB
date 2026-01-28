@@ -1,0 +1,16 @@
+services:
+  meme-app:
+    build: .
+    container_name: meme_container
+    ports:
+      - "8081:8081"
+    environment:
+      # 告诉 Rust 数据库在容器里的哪里
+      - DATABASE_URL=sqlite://data/meme.db
+      - RUST_LOG=info
+    volumes:
+      # 1. 挂载图片存储文件夹 (宿主机 storage -> 容器 /app/storage)
+      - ./storage:/app/storage
+      # 2. 挂载数据库文件夹 (宿主机 data -> 容器 /app/data)
+      - ./data:/app/data
+    restart: unless-stopped
