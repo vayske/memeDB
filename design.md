@@ -3,9 +3,11 @@
 ## Architecture
 
 [Client (Browser)] <--> [Axum Static Serve]
+
 |
 v
 [Axum API Server] <--> [SQLite Database]
+
 |
 v
 [Local File Storage (CAS)]
