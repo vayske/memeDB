@@ -7,6 +7,7 @@ use std::env;
 use axum::{
     Router,
     routing::{get, post, delete},
+    extract::DefaultBodyLimit
 };
 use handlers::{
     search::search_images,
@@ -37,6 +38,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Configure Router
     let app = Router::new()
         .route("/api/upload", post(upload_image))
+        .layer(DefaultBodyLimit::disable())
         .route("/api/search", get(search_images))
         .route("/api/images/{id}/tags", post(add_tags).get(get_image_tags))
         .route("/api/tags", get(list_tags))
