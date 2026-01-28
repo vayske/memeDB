@@ -3,11 +3,11 @@
 ## Architecture
 
 [Client (Browser)] <--> [Axum Static Serve]
-       |
-       v
+|
+v
 [Axum API Server] <--> [SQLite Database]
-       |
-       v
+|
+v
 [Local File Storage (CAS)]
 
 ## Core logic
