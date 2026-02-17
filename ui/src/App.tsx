@@ -24,6 +24,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [searchTags, setSearchTags] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   // === 新增状态：控制弹窗 ===
   const [selectedImage, setSelectedImage] = useState<Image | null>(null);
@@ -47,27 +48,61 @@ function App() {
     }
   };
 
-  // 上传图片
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const uploadFile = async (file: File) => {
     setIsUploading(true);
     const formData = new FormData();
     formData.append('file', file);
 
     try {
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        alert(`上传失败: ${errorText}`);
+        return;
+      }
+
       const json = await res.json();
       if (json.code === 200) {
-        fetchImages(searchTags); // 刷新列表
+        // alert('上传成功'); // 可以注释掉这个烦人的弹窗，让用户直接看到图出来
+        fetchImages(searchTags);
       } else {
-        alert('Upload failed: ' + json.msg);
+        alert('业务错误: ' + json.msg);
       }
     } catch (err) {
       console.error(err);
+      alert('网络错误');
     } finally {
       setIsUploading(false);
+      // 清空 input，允许重复上传同名文件
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) uploadFile(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault(); // 必须阻止默认行为，否则浏览器会直接打开图片
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      uploadFile(file);
+    } else {
+      alert('请拖入图片文件！');
     }
   };
 
@@ -160,7 +195,7 @@ function App() {
             onKeyDown={e => e.key === 'Enter' && fetchImages(searchTags)}
           />
         </div>
-        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleUpload} />
+        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleInputChange} />
         <button
           disabled={isUploading}
           onClick={() => fileInputRef.current?.click()}
@@ -172,6 +207,39 @@ function App() {
 
       {/* Grid */}
       <main className="max-w-7xl mx-auto p-4">
+        {/* === 新增：拖拽上传区域 === */}
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()} // 点击也能上传
+          className={`
+            mb-8 rounded-xl border-2 border-dashed transition-all duration-200 cursor-pointer
+            flex flex-col items-center justify-center py-12 px-4 text-center
+            ${isDragging
+                    ? 'border-blue-500 bg-blue-50 scale-[1.01] shadow-lg' // 拖拽时的样式
+                    : 'border-slate-300 bg-white hover:border-blue-400 hover:bg-slate-50' // 平常的样式
+                  }
+          `}
+        >
+          {/* 这里可以用 Lucide-React 的图标，或者简单的 Emoji */}
+          <div className="text-4xl mb-4">
+            {isUploading ? '⏳' : (isDragging ? '📂' : '☁️')}
+          </div>
+
+          {isUploading ? (
+            <p className="text-lg font-medium text-slate-500">Uploading meme...</p>
+          ) : (
+            <>
+              <h3 className="text-lg font-bold text-slate-700">
+                {isDragging ? 'Drop it like it\'s hot! 🔥' : 'Click or Drag images here'}
+              </h3>
+              <p className="text-sm text-slate-400 mt-1">
+                Supports JPG, PNG, GIF, WEBP
+              </p>
+            </>
+          )}
+        </div>
         {loading ? <div className="text-center py-10 text-slate-400">Loading...</div> : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {images.map((img) => (
